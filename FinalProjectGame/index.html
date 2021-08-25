@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Troy's Final Project Game Name</title>
+        <style>
+            table, th, td {
+            border:1px solid black;
+            }
+        </style>
+	</head>
+	<body>
+		<h1>Troy's Final Project Game Name</h1>
+        <p>Time: <span id='timer'>00:00:00</span></p>
+        <p>Your Objective: Make it back to your house with as much groceries and gold as you can in as little time as you can</p>
+        <p><span id='storyContainer'></span></p>
+        <table style="width:100%">
+            <tr>
+                <td id = "Choice1" style="display: block">Test</td>
+                <td id = "Choice2" style="display: block">Test</td>
+                <td id = "Choice3" style="display: block">Test</td>
+                <td id = "Choice4" style="display: block">Test</td>
+                <td id = "Choice5" style="display: block">Test</td>
+            </tr>
+        </table>
+		<canvas id="canvas" style="border:thin solid;" width="300" height="300"></canvas>
+		<script>
+            var playerObj, appleObj, bananaObj, loafObj, potatoObj;
+
+            const GAME_EVENTS = new Array();
+            const POTION_INDEX = 0;
+            const FAKE_GOLD_INDEX = 1;
+            const SECRET_KEY_INDEX = 2;
+            const MAX_CHOICES = 5;
+            var currentEvent;
+
+            function keyListener(){
+                switch(event.key){
+                    case "1":
+                        if(currentEvent.choices[0]){
+                            if (typeof(currentEvent.outcomes[0].add) != 'function'){
+                                currentEvent = currentEvent.outcomes[0];
+                                updateChoices(currentEvent);
+                            } else {
+                                currentEvent.outcomes[0].add();
+                            }
+                        }
+                        break;
+                    case "2":
+                        if(currentEvent.choices[1]){
+                            if (typeof(currentEvent.outcomes[1].add) != 'function'){
+                                currentEvent = currentEvent.outcomes[1];
+                                updateChoices(currentEvent);
+                            } else {
+                                currentEvent.outcomes[1].add();
+                            }
+                        }
+                        break;
+                    case "3":
+                        if(currentEvent.choices[2]){
+                            if (typeof(currentEvent.outcomes[2].add) != 'function'){
+                                currentEvent = currentEvent.outcomes[2];
+                                updateChoices(currentEvent);
+                            } else {
+                                currentEvent.outcomes[2].add();
+                            }
+                        }
+                        break;
+                    case "4":
+                        if(currentEvent.choices[3]){
+                            if (typeof(currentEvent.outcomes[3].add) != 'function'){
+                                currentEvent = currentEvent.outcomes[3];
+                                updateChoices(currentEvent);
+                            } else {
+                                currentEvent.outcomes[3].add();
+                            }
+                        }
+                        break;
+                    case "5":
+                        if(currentEvent.choices[4]){
+                            if (typeof(currentEvent.outcomes[0].add) != 'function'){
+                                currentEvent = currentEvent.outcomes[4];
+                                updateChoices(currentEvent);
+                            } else {
+                                currentEvent.outcomes[4].add();
+                            }
+                        }
+                        break;
+                    case "p":
+                        playerObj.inventory[POTION_INDEX].drinkPotion();
+                        break;
+                }
+            }
+
+            window.addEventListener("keypress", keyListener);
+
+            function setupPlayer() {
+                var potionObj = {"quantity": 0, "drinkPotion" : function(){ drinkPotion(this)}};
+                playerObj = { "health" : 100, "gold": 500, "groceries": [], "inventory" : [potionObj, "no fake gold", "no secret key"]};
+                appleObj = {"name" : "apples", "quantity" : 5};
+                bananaObj = {"name" : "bananas", "quantity" : 3};
+                loafObj = {"name" : "loaf of bread", "quantity" : 1};
+                potatoObj = {"name" : "bag of potatoes", "quantity" : 1};
+                // playerInventory
+                playerObj.groceries.push(appleObj, bananaObj, loafObj, potatoObj);
+                // playerObj
+                // playerObj.groceries.push(bananaObj)
+                // playerObj.groceries.push(loafObj)
+                // playerObj.groceries.push(potatoObj)
+            }
+
+            function drinkPotion(potion) {
+                if (potion.quantity>0){
+                    playerObj.health +=20;
+                    potion.quantity--;
+                    console.log(playerObj);
+                }
+                else {
+                    alert("You have no potions");
+                }
+                // return potion;
+            }
+
+            function addItemToInventory(item){
+                switch(item){
+                    case "Potion":
+                        if(playerObj.gold >= 50){
+                            playerObj.inventory[POTION_INDEX].quantity++;
+                            playerObj.gold -= 50;
+                            console.log(playerObj);
+                        } else {
+                            alert("You cannot afford to buy another potion");
+                        }
+                        break;
+                    case "FakeGold":
+                        if(playerObj.gold >= 300){
+                            playerObj.inventory[FAKE_GOLD_INDEX] = "has fake gold";
+                            playerObj.gold -= 300;
+                            console.log(playerObj);
+                        } else {
+                            alert("You cannot afford to buy fake gold");
+                        }
+                        break;
+                    case "SecretKey":
+                        if(playerObj.gold >= 999999) {
+                            playerObj.inventory[SECRET_KEY_INDEX] = "has secret key";
+                            playerObj.gold -= 999999;
+                            console.log(playerObj);
+                        } else {
+                            alert("You cannot afford to buy the secret key")
+                        }
+                        break;
+                }
+                return 0;
+            }
+
+            function createGameEvents(){
+                var endGame = {"text": "Your home", "choices" : []};
+                var addPotionToInventory = {"add": function() {addItemToInventory("Potion")}};
+                var addFakeGoldToInventory = {"add": function() {addItemToInventory("FakeGold")}};
+                var addSecretKeyToInventory = {"add": function() {addItemToInventory("SecretKey")}};
+                // TODO: Add obj vars with text, choices and outcomes. For outcomes that require a function we will need to make functions of them like I have above for adding the items to the inventory. Add events in reverse order as the event that happens before needs to know about the event happening after it, which must first be defined and created.
+
+                // TODO: change startHome event text, choices and outcomes
+                var startHome = {"text" : "nothing yet", "choices": ["do 1", " do 2"], "outcomes": [endGame]};
+                var keepShopping = {"text" : "You arrive at a tent with several goods. What do you do?", "choices": ["Buy health potions for 50 gold each (heals 20 damage)", "Buy fake gold for 300 gold (maybe this could be useful later)", "Buy secret key for 999999 gold (???)", "Do nothing or finish shopping"], "outcomes": [addPotionToInventory, addFakeGoldToInventory, addSecretKeyToInventory, startHome] };
+                var gameEvent1 = {"text" : "You start at the town with a loaf of bread, 5 apples, 3 bananas, and a bag of potatoes. Before you start your journey do you?", "choices": ["Keep shopping", "Start heading home"], "outcomes": [keepShopping, startHome]};
+                GAME_EVENTS.push(gameEvent1);
+                // return gameEvents;
+            }
+
+            function updateChoices(event){
+                if (event.text) {
+                    var storyText = document.getElementById("storyContainer");
+                    storyText.innerText = event.text;
+                    for(var i = 0; i<event.choices.length; i++){
+                        var num = i + 1;
+                        var choice = document.getElementById("Choice" + num);
+                        choice.innerText = event.choices[i] + " (" + num + ")";
+                        if (choice.style.display === "none") {
+                            choice.style.display = "block";
+                        }
+                    }
+                    for(var i = event.choices.length; i<MAX_CHOICES; i++){
+                        var num = i + 1;
+                        document.getElementById("Choice" + num).style.display = "none";
+                    }
+                } else {   
+                    console.log("No choices to update. Player probably bought something.")
+                }
+            }
+            
+            function main() {
+                createGameEvents();
+                var startEvent = GAME_EVENTS[0];
+                updateChoices(startEvent);
+                currentEvent = startEvent;
+                // Game will run while player has health and has not reached home
+                // while(playerObj.health > 0 && !currentEvent.text.includes("You made it home")){
+                //     // var startEvent = GAME_EVENTS[0];
+                //     var storyText = document.getElementById("storyContainer");
+                    
+                //     console.log("Looping");
+                //     playerObj.health -= 10;
+                // }
+                
+            }
+
+
+            setupPlayer();
+            main();
+
+            
+
+			/*
+First come up with an original premise and characters. If there is some overlap concerning themes and names from other stories across the various media platforms that is fine, but please not blatant plagiarism of another's work.
+As a base you can use the choose your adventure code in the unit 4 intro as a base for creating your game. However know that there will have to be heavy modifications to it to fulfill the other requirements.
+The game must include instructions and a basic synopsis of the story. Be sure to explain each system that is present in the game so the play is aware or what they will have to do. This can be included in the HTML of the web page itself or inside the game engine.
+The game must make use of document.getElementById to manipulate the HTMLElement.
+The game will need to make use of at least one Object that stores vital information for the game. This could be character data such as name, level, experience, stats ect..., or store different states of the game or flags. Feel free to use as many objects as need though.
+The game must have a main game declared function, and three other declared functions. At least two methods of an object must also be utilized. This can be the main game object or other created objects. Use functions and methods to minimize on repeating of code. More points for cleaner, less repeated code.
+The game must make use of an Array to keep track of something. This could be an inventory system, a history system, an achievement system, ect.. The contents of this array should be able to be displayed back to the player either at the press of a button, constantly updated on screen, or as a results screen. Feel free to use as many arrays as needed.
+A for loop and/or while loop needs to be used. These can be used to iterate though an Array to display information back. They could also be use as part of the game loop or some sort of AI logic, or as part of a system.
+The game will need to make use of a timer of some sorts that uses setInterval. This could be a game timer, or a timed scenario, or a battle timer, or any mixture of these. It can count up or countdown. This timer must be displayed to the user in an appropriate way. (no need to show hours if it coutdowns in second)
+The game must include at least one sort of non-time based counter that is displayed to the player. That could be money, health, score, magic, stress level, or any numerical system related to the game. There can be multiples of these but they must be represented to the player in some way(in number, in bars, in symbols, ect...). These values should be stored in their own variables or property of a larger game object.
+The game must implement some drawing in a <canvas> tag. Some suggestions are a map of the world showing the players current position, drawing enemies or battle effects when a choice is made. Can even use multiples to draw the interface out creating custom buttons. The canvas must however either react to the game(updating a players position) or to the player actions(a hover effect if used for a button)
+The game will need to have at least 40 different "scenes" with at least 15 of those having choices/actions to be made. The scenes must convey using text what is happening. Images can also be used, or feel free to draw out a scene using the <canvas> tag. If you are using some sort of battle system in the game, then a single battle is one set of choices/actions in a single scene, not each time you choose an action in the battle. These choices/actions must branch off into different results and have some effect on the game. (both choices always lead to the exact same following result) There can be more than two choices per scene and after the results have had their effect, the game can come back to single path or the can infinitely branch out with many possible endings.
+Each action a player can make is both represented visually on the screen (button, something clickable) or with the use of the keyboard. The corresponding key to press can be displayed as a hover effect over the button, or described outside the game in the HTML, or inside the game in an instructions screen, or on the button itself.
+The game must make use of random numbers in a meaningful way. This can be randomly selected choice, a random event or chance at an event happening, random damage in a battle, or random item pickups.
+Implement some kind of "cheat code" in the game. It can skip to the end of the game, give alot of resources (money/health), reset a timer ect... The code must be entered on the keyboard using a specific combination of key presses that are not accidentaly going to get pressed (6+ keys in the sequence). The keys must be pressed within 1 second of each other and must be consecutive. If too much time elapses or an incorrect key is pressed in the middle of the sequence, the whole sequence should reset.
+The game will need some sort of start and ending screen.
+The code should be heavily commented describing what the code is doing or supposed to do.
+Be sure to test and debug the game before submitting. Obvious bugs, non-functioning code and fatal errors will be reflected in the grade.
+Be school appropriate with the language and context. This is a video game project and there is violence in video games. However there is no need to go overboard with gratuity of the content.
+*/
+		</script>
+	</body>
+</html>

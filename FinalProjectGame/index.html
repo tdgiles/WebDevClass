@@ -408,7 +408,7 @@
                     if (!tookEasyPath){
                         momSlap.text = "Your mom slaps you and then says \"I told you always take the easiest path home!\"";
                         playerObj.health -= 10;
-                        updatePlayerStatus(playerObj.health);
+                        updatePlayerStatus("setH", playerObj.health);
                     } else {
                         momSlap.text = "She replies: \"I'm just glad you made it home safe!\"";
                     }

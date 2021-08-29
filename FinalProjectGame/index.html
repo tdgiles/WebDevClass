@@ -37,7 +37,7 @@
                 <h1>Troy's Final Project Game Name</h1>
                 <p>Time: <span id='timer'>00:00:00</span></p>
                 <p>Your Objective: Make it back to your house with as much groceries and gold as you can in as little time as you can</p>
-                <p>Game Controls: Press (1-5) to select an option. Press 'p' to drink a potion. Press 'i' to view your inventory and groceries.</p>
+                <p>Game Controls: Press (1-5) to select an option. Press 'p' to drink a potion. Press 'i' to view your inventory and groceries. Press 'v' to show/hide the cheat code entry and result section.</p>
                 <p><span id='storyContainer'></span></p>
                 <table style="width:100%">
                     <tr>
@@ -48,6 +48,8 @@
                         <td id = "Choice5" style="display: block">Test</td>
                     </tr>
                 </table>
+                <p id="user_input"></p>
+                <p id="cheat_message">Nothing</p>
                 <p id="endInventory">You Made it home with: <span id="inventory"></span></p>
                 <img id="winner" src="winner.png">
                 <img id="loser" src="death.png">
@@ -58,6 +60,7 @@
                     <p>Health: <span id=playerHealth></span> &emsp; Gold: <span id=playerGold></span></p>
                     <p>Potions: <span id=potionsAvailable></span></p>
                     <canvas id="canvas" style="border:thin solid;" width="300" height="300"></canvas>
+                    <p id="revealCheatCodes"></p>
                 </div>
             </div>
         </div>
@@ -73,6 +76,12 @@
             const BREAD_INDEX = 2;
             const POTATO_INDEX = 3;
             const MAX_CHOICES = 5;
+            const userInputDisplay = document.getElementById("user_input");
+            const cheatMessage = document.getElementById("cheat_message");
+            userInputDisplay.style.display = "none";
+            cheatMessage.style.display = "none";
+            const CHEAT_CODES_TEXT = "CHEAT CODES UNLOCKED! 'getgol' -> Adds 999,999 gold\n'gethel' -> adds 1000 health\n'restmr -> resets the timer"
+
             var currentEvent;
             var width, height = 300;
             var statusId;
@@ -315,12 +324,95 @@
                         var stringToAlert = "You have " + getInventory();
                         alert(stringToAlert);
                         break;
+                    case "v":
+                        if (userInputDisplay.style.display === "none" && cheatMessage.style.display === "none") {
+                            userInputDisplay.style.display = "block";
+                            cheatMessage.style.display = "block";
+                        } else {
+                            userInputDisplay.style.display = "none";
+                            cheatMessage.style.display = "none";
+                        }
+                        break;
                 }
             }
 
-            
-
             window.addEventListener("keypress", keyListener);
+
+            // Found how to add cheat codes by viewing this post: https://javascript.plainenglish.io/how-to-detect-a-sequence-of-keystrokes-in-javascript-83ec6ffd8e93
+            // CHEAT CODE IMPLEMENTATION START
+            // keydown listener on the page for tracking sequence of keys pressed
+            document.addEventListener('DOMContentLoaded', () => {
+                'use strict';
+
+                const options = {
+                    eventType: 'keydown',
+                    keystrokeDelay: 1000
+                };
+
+                keyMapper([updateUI], options);
+            });
+
+            // responsible for mapping the keys pressed and determining the delay between keystrokes
+            function keyMapper(callbackList, options) {
+                const delay = hasProperty('keystrokeDelay', options) && options.keystrokeDelay >= 300 && options.keystrokeDelay;
+                const keystrokeDelay = delay || 1000;
+                const eventType = hasProperty('eventType', options) && options.eventType || 'keydown';
+
+                let state = {
+                    buffer: [],
+                    lastKeyTime: Date.now()
+                };
+
+                document.addEventListener(eventType, event => {
+                    const key = event.key;
+                    const currentTime = Date.now();
+                    let buffer = [];
+
+                    if (currentTime - state.lastKeyTime > keystrokeDelay) {
+                        buffer = [key];
+                    } else {
+                        buffer = [...state.buffer, key];
+                    }
+
+                    state = {buffer: buffer, lastKeyTime: currentTime};
+
+                    callbackList.forEach(callback => callback(buffer));
+                });
+
+                function hasProperty(property, object) {
+                    return object && object.hasOwnProperty(property);
+                }
+            }
+
+            // Updates the userInput of current keySequence they have entered as well as the cheatMessage
+            function updateUI(keySequence) {
+                const userInput = keySequence.join('').toLowerCase();
+                const keySequences = {
+                    'gethel': 'Add 1000 health',
+                    'getgol': "Add 999,999 gold",
+                    'restmr': "Reset time"
+                };
+                userInputDisplay.innerText = userInput;
+                cheatMessage.innerText = keySequences[userInput] || 'Nothing';
+
+                if (keySequences[userInput]) {
+                    switch(keySequences[userInput]){
+                        case 'Add 1000 health':
+                            playerObj.health += 1000;
+                            updatePlayerStatus("setH", playerObj.health);
+                            break;
+                        case 'Add 999,999 gold':
+                            playerObj.gold += 999999;
+                            updatePlayerStatus("setG", playerObj.gold);
+                            break;
+                        case 'Reset time':
+                            count = 0;
+                            break;
+                    }
+                }
+            }
+            // CHEAT CODE IMPLEMENTATION END
+
             var youLost = {"text": "You died trying to get home",
             "gameEvent": function() {
                 loserPic.style.display = "block";
@@ -535,23 +627,14 @@
                 var mediumPath6 = {"text" : "After your experience with the strange tree, you continue on down the path", "choices" : ["Continue"], "outcomes" : [mediumPath7]};
                 var displayCheatCodes = {"text" : "You find a scroll telling you how to summon powerful spells.",
                 "gameEvent": function() {
-                    //TODO: show cheats
-                    //  (type gethel -> += 1000 health, 
-                    // getgol -> += 999999 gold
-                    // if (playerObj.inventory[SECRET_KEY_INDEX] == "has secret key") {
-                    //     secretKeyUse.text = "You notice that the secret key fits into the key hole in the tree";
-                    //     secretKeyUse.choices.push("Use the key (if you have it)");
-                    //     secretKeyUse.outcomes.push(displayCheatCodes);
-                    // } else {
-                    //     secretKeyUse.text = "You don't have any keys to try in the keyhole";
-                    // }
+                    document.getElementById("revealCheatCodes").innerText = CHEAT_CODES_TEXT;
                 }, "choices" : ["Nice!"], "outcomes" : [mediumPath6]};
                 
                 var secretKeyUse = {"text" : "",
                 "gameEvent": function() {
                     if (playerObj.inventory[SECRET_KEY_INDEX] == "has secret key") {
                         secretKeyUse.text = "You notice that the secret key fits into the key hole in the tree";
-                        secretKeyUse.choices.push("Use the key (if you have it)");
+                        secretKeyUse.choices.push("Use the key");
                         secretKeyUse.outcomes.push(displayCheatCodes);
                     } else {
                         secretKeyUse.text = "You don't have any keys to try in the keyhole";
@@ -692,17 +775,10 @@
                 var startEvent = GAME_EVENTS[0];
                 updateChoices(startEvent);
                 currentEvent = startEvent;
-                
             }
 
             setupPlayer();
             main();
-
-			/*
-
-Implement some kind of "cheat code" in the game. It can skip to the end of the game, give alot of resources (money/health), reset a timer ect... The code must be entered on the keyboard using a specific combination of key presses that are not accidentaly going to get pressed (6+ keys in the sequence). The keys must be pressed within 1 second of each other and must be consecutive. If too much time elapses or an incorrect key is pressed in the middle of the sequence, the whole sequence should reset.
-
-*/
 		</script>
 	</body>
 </html>

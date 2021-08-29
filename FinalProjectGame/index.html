@@ -1,29 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="UTF-8">
-		<title>Troy's Final Project Game Name</title>
+        <meta charset="UTF-8">
+        <title>Troy's Final Project Game Name</title>
         <style>
             table, th, td {
-            border:1px solid black;
+                border:1px solid black;
+            }
+            .storyColumn {
+                float: left;
+                width: 70%;
+            }
+            .statsColumn {
+                float: right;
+                width: 30%;
+            }
+            /* Clear floats after the columns */
+            .row:after {
+                content: "";
+                display: table;
+                clear: both;
+            }
+            .canvasContainer {
+                margin: auto;
+                width: 50%;
             }
         </style>
-	</head>
-	<body>
-		<h1>Troy's Final Project Game Name</h1>
-        <p>Time: <span id='timer'>00:00:00</span></p>
-        <p>Your Objective: Make it back to your house with as much groceries and gold as you can in as little time as you can</p>
-        <p><span id='storyContainer'></span></p>
-        <table style="width:100%">
-            <tr>
-                <td id = "Choice1" style="display: block">Test</td>
-                <td id = "Choice2" style="display: block">Test</td>
-                <td id = "Choice3" style="display: block">Test</td>
-                <td id = "Choice4" style="display: block">Test</td>
-                <td id = "Choice5" style="display: block">Test</td>
-            </tr>
-        </table>
-		<canvas id="canvas" style="border:thin solid;" width="300" height="300"></canvas>
+    </head>
+    <body>
+        <div id="startScreen">
+            <button type="button" id="startBtn">Start Game!</button>
+            <img src="groceryMan.jpeg">
+        </div>
+        <div class="row" id="gameContents">
+            <div class="storyColumn">
+                <h1>Troy's Final Project Game Name</h1>
+                <p>Time: <span id='timer'>00:00:00</span></p>
+                <p>Your Objective: Make it back to your house with as much groceries and gold as you can in as little time as you can</p>
+                <p>Game Controls: Press (1-5) to select an option. Press 'p' to drink a potion. Press 'i' to view your inventory and groceries.</p>
+                <p><span id='storyContainer'></span></p>
+                <table style="width:100%">
+                    <tr>
+                        <td id = "Choice1" style="display: block">Test</td>
+                        <td id = "Choice2" style="display: block">Test</td>
+                        <td id = "Choice3" style="display: block">Test</td>
+                        <td id = "Choice4" style="display: block">Test</td>
+                        <td id = "Choice5" style="display: block">Test</td>
+                    </tr>
+                </table>
+                <p id="endInventory">You Made it home with: <span id="inventory"></span></p>
+                <img id="winner" src="winner.png">
+                <img id="loser" src="death.png">
+            </div>
+            <div class="statsColumn">
+                <div class="canvasContainer">
+                    <p><strong>Player Status</strong></p>
+                    <p>Health: <span id=playerHealth></span> &emsp; Gold: <span id=playerGold></span></p>
+                    <p>Potions: <span id=potionsAvailable></span></p>
+                    <canvas id="canvas" style="border:thin solid;" width="300" height="300"></canvas>
+                </div>
+            </div>
+        </div>
 		<script>
             var playerObj, appleObj, bananaObj, loafObj, potatoObj;
 
@@ -31,13 +68,186 @@
             const POTION_INDEX = 0;
             const FAKE_GOLD_INDEX = 1;
             const SECRET_KEY_INDEX = 2;
+            const APPLE_INDEX = 0;
+            const BANANA_INDEX = 1;
+            const BREAD_INDEX = 2;
+            const POTATO_INDEX = 3;
             const MAX_CHOICES = 5;
             var currentEvent;
+            var width, height = 300;
+            var statusId;
+            var timerId;
+            var count = 0;
 
+            var healthStatus = document.getElementById("playerHealth");
+            var goldStatus = document.getElementById("playerGold");
+            var potionStatus = document.getElementById("potionsAvailable");
+            var endInventory = document.getElementById("endInventory");
+            endInventory.style.display = "none";
+
+            var playerCanvas = document.getElementById("canvas");
+            playerCanvas.style.backgroundColor = "white";
+            var context = canvas.getContext("2d");
+
+            var gameContents = document.getElementById("gameContents");
+            gameContents.style.display = "none";
+
+            var winnerPic = document.getElementById("winner");
+            winnerPic.style.display = "none";
+            var loserPic = document.getElementById("loser");
+            loserPic.style.display = "none";
+
+            var startScreen = document.getElementById("startScreen");
+
+            document.getElementById("startBtn").addEventListener("click", function() {
+                startScreen.style.display = "none";
+                gameContents.style.display = "block";
+                timerId = setInterval(updateTimer,1000);
+            });
+
+            var tookEasyPath = true;
+
+            function randomNumber(min, max){                               
+                return Math.floor(Math.random() * (max - min + 1)) + min;  
+            }
+
+            function updateTimer(){
+                var SECONDS = 60;
+                var MINUTES = 60;
+                count++;
+				var hours, minutes, seconds;
+				displayString = "";
+                hours = Math.floor(count/(SECONDS*MINUTES));
+                minutes = Math.floor(count/(SECONDS)) - hours * MINUTES;
+				seconds = count - (hours*MINUTES*SECONDS) - (minutes*SECONDS);
+				if(hours==0){
+                    displayString+="00:";
+                } else if(hours<10){
+                    displayString+="0"+hours+":";
+                } else {
+                    displayString+=hours+":";
+                }
+                if(minutes==0){
+                    displayString+="00:";
+                } else if(minutes<10){
+                    displayString+="0"+minutes+":";
+                } else {
+                    displayString+=minutes+":";
+                }
+                if(seconds<10){
+                    displayString+="0"+seconds;
+                } else {
+                    displayString+=seconds;
+                }
+				timer.innerText=displayString;
+			}
+            
+            function updatePlayerStatus(status, amount){
+                context.clearRect(0, 0, playerCanvas.width, playerCanvas.height);
+                // Draw the eyes
+                context.beginPath();
+                context.arc(120, 100, 20, 0, 2 * Math.PI);
+                context.stroke()
+                context.beginPath();
+                context.arc(180, 100, 20, 0, 2 * Math.PI);
+                context.stroke()
+                switch(status){
+                    case "happy":
+                        context.beginPath();
+                        context.arc(150, 160, 90, 0, 1 * Math.PI);
+                        context.stroke()
+                        context.beginPath();
+                        context.arc(120, 100, 5, 0, 2 * Math.PI);
+                        context.fill();
+                        context.beginPath();
+                        context.arc(180, 100, 5, 0, 2 * Math.PI);
+                        context.fill();
+                        break;
+                    case "alright":
+                        context.beginPath();
+                        context.moveTo(80, 200);
+                        context.lineTo(220, 200)
+                        context.stroke()
+                        context.beginPath();
+                        context.arc(120, 100, 5, 0, 2 * Math.PI);
+                        context.fill();
+                        context.beginPath();
+                        context.arc(180, 100, 5, 0, 2 * Math.PI);
+                        context.fill();
+                        break;
+                    case "sad":
+                        context.beginPath();
+                        context.arc(150, 250, 80, 0 * Math.PI, 1 * Math.PI, 1 * Math.PI);
+                        context.stroke()
+                        context.beginPath();
+                        context.arc(120, 100, 5, 0, 2 * Math.PI);
+                        context.fill();
+                        context.beginPath();
+                        context.arc(180, 100, 5, 0, 2 * Math.PI);
+                        context.fill();
+                        context.beginPath();
+                        context.moveTo(180, 120);
+                        context.lineTo(190, 140)
+                        context.stroke()
+                        context.beginPath();
+                        context.moveTo(180, 120);
+                        context.lineTo(170, 140)
+                        context.stroke()
+                        context.beginPath();
+                        context.arc(180, 140, 10, 0, 1 * Math.PI);
+                        context.stroke()
+                        break;
+                    case "dead":
+                        context.beginPath();
+                        context.arc(150, 250, 80, 0 * Math.PI, 1 * Math.PI, 1 * Math.PI);
+                        context.stroke()
+                        context.beginPath();
+                        context.moveTo(160, 120);
+                        context.lineTo(200, 80)
+                        context.stroke()
+                        context.beginPath();
+                        context.moveTo(160, 80);
+                        context.lineTo(200, 120)
+                        context.stroke()
+                        context.beginPath();
+                        context.moveTo(100, 120);
+                        context.lineTo(140, 80)
+                        context.stroke()
+                        context.beginPath();
+                        context.moveTo(100, 80);
+                        context.lineTo(140, 120)
+                        context.stroke()
+                        break;
+                    case "setH":
+                        healthStatus.innerText = amount;
+                        break;
+                    case "setG":
+                        goldStatus.innerText = amount;
+                        break;
+                }
+            }
+
+            function getInventory(){
+                var stringToAlert = "";
+                for(var i=1; i<playerObj.inventory.length; i++){
+                    stringToAlert += playerObj.inventory[i] + ", ";
+                }
+                stringToAlert += " and "
+                for(var i=0; i<playerObj.groceries.length; i++){
+                    var foodObj = playerObj.groceries[i];
+                    stringToAlert += foodObj.quantity + " " + foodObj.name;
+                    stringToAlert += " ";
+                }
+                return stringToAlert;
+            }
+            
             function keyListener(){
                 switch(event.key){
                     case "1":
                         if(currentEvent.choices[0]){
+                            if (currentEvent.outcomes[0].gameEvent){
+                                currentEvent.outcomes[0].gameEvent();
+                            }
                             if (typeof(currentEvent.outcomes[0].add) != 'function'){
                                 currentEvent = currentEvent.outcomes[0];
                                 updateChoices(currentEvent);
@@ -48,6 +258,9 @@
                         break;
                     case "2":
                         if(currentEvent.choices[1]){
+                            if (currentEvent.outcomes[1].gameEvent){
+                                currentEvent.outcomes[1].gameEvent();
+                            }
                             if (typeof(currentEvent.outcomes[1].add) != 'function'){
                                 currentEvent = currentEvent.outcomes[1];
                                 updateChoices(currentEvent);
@@ -58,6 +271,9 @@
                         break;
                     case "3":
                         if(currentEvent.choices[2]){
+                            if (currentEvent.outcomes[2].gameEvent){
+                                currentEvent.outcomes[2].gameEvent();
+                            }
                             if (typeof(currentEvent.outcomes[2].add) != 'function'){
                                 currentEvent = currentEvent.outcomes[2];
                                 updateChoices(currentEvent);
@@ -68,6 +284,9 @@
                         break;
                     case "4":
                         if(currentEvent.choices[3]){
+                            if (currentEvent.outcomes[3].gameEvent){
+                                currentEvent.outcomes[3].gameEvent();
+                            }
                             if (typeof(currentEvent.outcomes[3].add) != 'function'){
                                 currentEvent = currentEvent.outcomes[3];
                                 updateChoices(currentEvent);
@@ -78,6 +297,9 @@
                         break;
                     case "5":
                         if(currentEvent.choices[4]){
+                            if (currentEvent.outcomes[4].gameEvent){
+                                currentEvent.outcomes[4].gameEvent();
+                            }
                             if (typeof(currentEvent.outcomes[0].add) != 'function'){
                                 currentEvent = currentEvent.outcomes[4];
                                 updateChoices(currentEvent);
@@ -89,10 +311,21 @@
                     case "p":
                         playerObj.inventory[POTION_INDEX].drinkPotion();
                         break;
+                    case "i":
+                        var stringToAlert = "You have " + getInventory();
+                        alert(stringToAlert);
+                        break;
                 }
             }
 
+            
+
             window.addEventListener("keypress", keyListener);
+            var youLost = {"text": "You died trying to get home",
+            "gameEvent": function() {
+                loserPic.style.display = "block";
+                clearInterval(timerId);
+            }, "choices" : []};
 
             function setupPlayer() {
                 var potionObj = {"quantity": 0, "drinkPotion" : function(){ drinkPotion(this)}};
@@ -101,24 +334,24 @@
                 bananaObj = {"name" : "bananas", "quantity" : 3};
                 loafObj = {"name" : "loaf of bread", "quantity" : 1};
                 potatoObj = {"name" : "bag of potatoes", "quantity" : 1};
-                // playerInventory
                 playerObj.groceries.push(appleObj, bananaObj, loafObj, potatoObj);
-                // playerObj
-                // playerObj.groceries.push(bananaObj)
-                // playerObj.groceries.push(loafObj)
-                // playerObj.groceries.push(potatoObj)
+                potionStatus.innerText = playerObj.inventory[POTION_INDEX].quantity;
+                healthStatus.innerText = playerObj.health;
+                goldStatus.innerText = playerObj.gold;
+                updatePlayerStatus("happy");
             }
 
             function drinkPotion(potion) {
                 if (potion.quantity>0){
                     playerObj.health +=20;
+                    updatePlayerStatus("setH", playerObj.health);
                     potion.quantity--;
+                    potionStatus.innerText = potion.quantity;
                     console.log(playerObj);
                 }
                 else {
                     alert("You have no potions");
                 }
-                // return potion;
             }
 
             function addItemToInventory(item){
@@ -126,7 +359,9 @@
                     case "Potion":
                         if(playerObj.gold >= 50){
                             playerObj.inventory[POTION_INDEX].quantity++;
+                            potionStatus.innerText = playerObj.inventory[POTION_INDEX].quantity;
                             playerObj.gold -= 50;
+                            updatePlayerStatus("setG", playerObj.gold);
                             console.log(playerObj);
                         } else {
                             alert("You cannot afford to buy another potion");
@@ -136,6 +371,7 @@
                         if(playerObj.gold >= 300){
                             playerObj.inventory[FAKE_GOLD_INDEX] = "has fake gold";
                             playerObj.gold -= 300;
+                            updatePlayerStatus("setG", playerObj.gold);
                             console.log(playerObj);
                         } else {
                             alert("You cannot afford to buy fake gold");
@@ -145,6 +381,7 @@
                         if(playerObj.gold >= 999999) {
                             playerObj.inventory[SECRET_KEY_INDEX] = "has secret key";
                             playerObj.gold -= 999999;
+                            updatePlayerStatus("setG", playerObj.gold);
                             console.log(playerObj);
                         } else {
                             alert("You cannot afford to buy the secret key")
@@ -155,18 +392,251 @@
             }
 
             function createGameEvents(){
-                var endGame = {"text": "Your home", "choices" : []};
+                var youMadeItHome = {"text": "Your home!",  
+                "gameEvent": function() {
+                    winnerPic.style.display = "block";
+                    clearInterval(timerId);
+                    endInventory.style.display = "block";
+                    document.getElementById("inventory").innerText = getInventory();
+                }, "choices" : []};
                 var addPotionToInventory = {"add": function() {addItemToInventory("Potion")}};
                 var addFakeGoldToInventory = {"add": function() {addItemToInventory("FakeGold")}};
                 var addSecretKeyToInventory = {"add": function() {addItemToInventory("SecretKey")}};
-                // TODO: Add obj vars with text, choices and outcomes. For outcomes that require a function we will need to make functions of them like I have above for adding the items to the inventory. Add events in reverse order as the event that happens before needs to know about the event happening after it, which must first be defined and created.
+                
+                var momSlap = {"text" : "",
+                "gameEvent": function() {
+                    if (!tookEasyPath){
+                        momSlap.text = "Your mom slaps you and then says \"I told you always take the easiest path home!\"";
+                        playerObj.health -= 10;
+                        updatePlayerStatus(playerObj.health);
+                    } else {
+                        momSlap.text = "She replies: \"I'm just glad you made it home safe!\"";
+                    }
+                }, "choices" : ["Continue"], "outcomes" : [youMadeItHome]} 
+                var momConvoTime = {"text" : "You arrive in your house and your mom is waiting for you she asks, \"What took you so long?\"", "choices" : ["Tell her which path you took"], "outcomes" : [momSlap]}
 
-                // TODO: change startHome event text, choices and outcomes
-                var startHome = {"text" : "nothing yet", "choices": ["do 1", " do 2"], "outcomes": [endGame]};
+                var mediumPath8 = {"text" : "You make it back home", "choices" : ["Continue"], "outcomes" : [momConvoTime]};
+
+                var cartLeave = {"text" : "The cart driver bids you goodbye and continues on his way", "choices" : ["Continue"], "outcomes" : [momConvoTime]}
+                var cartSmack = {"text" : "The cart driver isn't very happy with your question and smacks you",
+                "gameEvent": function() {
+                    playerObj.health -= 5;
+                    updatePlayerStatus("setH", playerObj.health);
+                }, "choices" : ["Okay"], "outcomes" : [cartLeave]}
+                var cartConvo = {"text" : "You arrive at your house. What do you say to the driver?", "choices" : ["Thanks", "Nothing", "Why was the ride so expensive?"], "outcomes" : [cartLeave, cartLeave, cartSmack]}
+                var cartPath4 = {"text" : "You continue riding down the path", "choices" : ["Continue"], "outcomes" : [cartConvo]};
+                var cartPath3 = {"text" : "You continue riding down the path", "choices" : ["Continue"], "outcomes" : [cartPath4]};
+                var cartPath2 = {"text" : "You continue riding down the path", "choices" : ["Continue"], "outcomes" : [cartPath3]};
+                var cartPath1 = {"text" : "You pay the 500 gold and jump into the cart and start riding along smoothly",
+                "gameEvent": function() {
+                    tookEasyPath = false;
+                    playerObj.gold -= 500;
+                    updatePlayerStatus("setG", playerObj.gold);
+                }, "choices" : ["Continue"], "outcomes" : [cartPath2]};
+
+                var jumpAcross = {"text" : "You fall down the hole severly hurting yourself and then take 10 minutes to climb back out.",
+                "gameEvent": function() {
+                    playerObj.health -= 50;
+                    updatePlayerStatus("setH", playerObj.health);
+                    count += 60 * 10;
+                }, "choices" : ["Continue"], "outcomes" : [mediumPath8]};
+
+                var walkAround = {"text" : "You are able to find a small cliff ledge and carefully make it to the other side after 30 minutes",
+                "gameEvent": function() {
+                    count += 60 * 30;
+                }, "choices" : ["Continue"], "outcomes" : [mediumPath8]}; 
+
+                var hardPath3 = {"text" : "On the final stretch you come up to a gaping hole in the ground", "choices" : ["Attempt to jump across", "walk around the hole"], "outcomes" : [jumpAcross, walkAround]};
+
+                var attackBear = {"text" : "The bear doesn't like you getting close to it and claws at and bites you several times!",
+                "gameEvent": function() {
+                    playerObj.health -= randomNumber(15, 45);
+                    updatePlayerStatus("setH", playerObj.health);
+                }, "choices" : ["Continue"], "outcomes" : [hardPath3]};
+
+                var ignoreBear = {"text" : "The bear smells your bananas and charges at you visciously, making you lose some bananas",
+                "gameEvent": function() {
+                    playerObj.health -= randomNumber(15, 45);
+                    updatePlayerStatus("setH", playerObj.health);
+                    playerObj.groceries[BANANA_INDEX].quantity = 0;
+                }, "choices" : ["Continue"], "outcomes" : [hardPath3]};
+
+                var distractBear = {"text" : "You throw an apple towards the bear and then walk by while it goes after the apple you threw",
+                "gameEvent": function() {
+                    playerObj.groceries[APPLE_INDEX].quantity--;
+                }, "choices" : ["Continue"], "outcomes" : [hardPath3]};
+
+                var waitForBear = {"text" : "You wait 30 minutes until finally the bear leaves the path",
+                "gameEvent": function() {
+                    count += 60 * 30;
+                }, "choices" : ["Continue"], "outcomes" : [hardPath3]};
+
+                var hardPath2 = {"text" : "As you round a corner you see a bear", "choices" : ["Attack the bear", "Keep going on quietly trying not to draw its attention.", "Distract the bear with some of your food", "Wait for the bear to leave"], "outcomes" : [attackBear, ignoreBear, distractBear, waitForBear]};
+
+                var swimAcross = {"text" : "You get swept down the river hitting a few rocks, and lose your bag of potatoes.",
+                "gameEvent": function() {
+                    playerObj.health -= 20;
+                    updatePlayerStatus("setH", playerObj.health);
+                    playerObj.groceries[POTATO_INDEX].quantity--;
+                }, "choices" : ["Continue"], "outcomes" : [hardPath2]};
+
+                var calmerSection = {"text" : "After about 10 minutes you find a calmer section downstream and get across safely.",
+                "gameEvent": function() {
+                    count += 60 * 10;
+                }, "choices" : ["Continue"], "outcomes" : [hardPath2]};
+
+                var bridge = {"text" : "After about 20 minutes you find a bridge and you get across the river safely.",
+                "gameEvent": function() {
+                    count += 60 * 20;
+                }, "choices" : ["Continue"], "outcomes" : [hardPath2]};
+
+                var hardPath1 = {"text" : "As you walk you come across a roaring river right in your path what do you do?", 
+                "gameEvent": function() {
+                    tookEasyPath = false;
+                }, "choices" : ["Attempt to swim across", "Search for a calmer section to cross", "Search for a bridge to cross"], "outcomes" : [swimAcross, calmerSection, bridge]};
+
+                
+                var thugFight = {"text" : "You start fighting the thugs but take some damage in the process",
+                "gameEvent": function() {
+                    playerObj.health -= randomNumber(5, 25);
+                    updatePlayerStatus("setH", playerObj.health);
+                }, "choices" : ["Run away from the thugs while they are distracted"], "outcomes" : [mediumPath8]};
+                var thugBribe = {"text" : "",
+                "gameEvent": function() {
+                    if (playerObj.gold >= 500){
+                        thugBribe.text = "You bribe the thugs and they decide to leave you alone";
+                        playerObj.gold -= 500;
+                        updatePlayerStatus("setG", playerObj.gold);
+                    }
+                    else {
+                        thugBribe.text = "The thugs take your money but are angered by your lack of gold and give you a beating."
+                        playerObj.gold = 0;
+                        playerObj.health -= randomNumber(5, 25);
+                        updatePlayerStatus("setH", playerObj.health);
+                        updatePlayerStatus("setG", playerObj.gold);
+                    }
+                }, "choices" : ["Okay"], "outcomes" : [mediumPath8]};
+                var thugTrick = {"text" : "You give the thugs fake gold and they don't seem to notice", "choices" : ["Okay"], "outcomes" : [mediumPath8]};
+                var thugIgn = {"text" : "The thugs spot you and decide to rob you",
+                "gameEvent": function() {
+                    playerObj.health -= 50;
+                    updatePlayerStatus("setH", playerObj.health);
+                    playerObj.gold = 0;
+                    updatePlayerStatus("setG", playerObj.gold);
+                }, "choices" : ["Oh no"], "outcomes" : [mediumPath8]};
+                var thugs = {"text" : "You walk closer to the thugs, what will you do?", 
+                "gameEvent": function() {
+                    if (playerObj.inventory[FAKE_GOLD_INDEX] == "has fake gold") {
+                        thugs.choices.push("Give them fake gold");
+                        thugs.outcomes.push(thugTrick);
+                    }
+                },"choices" : ["Fight them!", "Bribe them", "Ignore them"], "outcomes" : [thugFight, thugBribe, thugIgn]};
+                var mediumPath7 = {"text" : "As you near your house you spot a gang of thugs.", "choices" : ["Continue"], "outcomes" : [thugs]};
+                var mediumPath6 = {"text" : "After your experience with the strange tree, you continue on down the path", "choices" : ["Continue"], "outcomes" : [mediumPath7]};
+                var displayCheatCodes = {"text" : "You find a scroll telling you how to summon powerful spells.",
+                "gameEvent": function() {
+                    //TODO: show cheats
+                    //  (type gethel -> += 1000 health, 
+                    // getgol -> += 999999 gold
+                    // if (playerObj.inventory[SECRET_KEY_INDEX] == "has secret key") {
+                    //     secretKeyUse.text = "You notice that the secret key fits into the key hole in the tree";
+                    //     secretKeyUse.choices.push("Use the key (if you have it)");
+                    //     secretKeyUse.outcomes.push(displayCheatCodes);
+                    // } else {
+                    //     secretKeyUse.text = "You don't have any keys to try in the keyhole";
+                    // }
+                }, "choices" : ["Nice!"], "outcomes" : [mediumPath6]};
+                
+                var secretKeyUse = {"text" : "",
+                "gameEvent": function() {
+                    if (playerObj.inventory[SECRET_KEY_INDEX] == "has secret key") {
+                        secretKeyUse.text = "You notice that the secret key fits into the key hole in the tree";
+                        secretKeyUse.choices.push("Use the key (if you have it)");
+                        secretKeyUse.outcomes.push(displayCheatCodes);
+                    } else {
+                        secretKeyUse.text = "You don't have any keys to try in the keyhole";
+                    }
+                }, "choices" : ["Leave the tree and continue on down the path"], "outcomes" : [mediumPath6]};
+                var secretTree = {"text" : "Nearing the tree you see a key hole in it. What do you do?", "choices" : ["Investigate", "Ignore"], "outcomes" : [secretKeyUse, mediumPath6]};
+                var mediumPath5 = {"text" : "After continuing down the path you see a tree with a strange looking hole in it", "choices" : ["Continue"], "outcomes" : [secretTree]};
+                var mediumPath4 = {"text" : "After your experience with the red eyes you decide to continue on down the path", "choices" : ["Continue"], "outcomes" : [mediumPath5]};
+                var redScare = {"text" : "Your tactic works and the red eyes run away", "choices" : ["Okay"], "outcomes" : [mediumPath4]};
+                var redInv = {"text" : "You decide to get a closer look which was definitely a bad choice as a wolf springs out and bites you",
+                "gameEvent": function() {
+                    playerObj.health -= 20;
+                    updatePlayerStatus("setH", playerObj.health);
+                }, "choices" : ["Okay"], "outcomes" : [mediumPath4]};
+                var redIgn = {"text" : "You decide to ignore the red eyes and walk by, but a wolf jumps out and scares you making you drop your potatoes", "choices" : ["Okay"], "outcomes" : [mediumPath4]};
+                var redRun = {"text" : "You decide to run away from the red eyes and get by without a scratch", "choices" : ["Okay"], "outcomes" : [mediumPath4]};
+                var redEyes = {"text" : "As you get closer to the red eyes you start to fear for your safety. What do you do?", "choices" : ["Yell at it", "Throw rock at it", "Investigate the eyes", "Ignore the eyes", "Run away"], "outcomes" : [redScare, redScare, redInv, redIgn, redRun]};
+                var mediumPath3 = {"text" : "You see a pair of red eyes in the bushes", "choices" : ["Continue"], "outcomes" : [redEyes]};
+                var mediumPath2 = {"text" : "You continue on down the path", "choices" : ["Continue"], "outcomes" : [mediumPath3]};
+                var mediumPath1 = {"text" : "You begin walking on the medium sized path that is slightly dangerous",
+                "gameEvent": function() {
+                    tookEasyPath = false;
+                }, "choices" : ["Continue"], "outcomes" : [mediumPath2]};
+
+                var easyPath11 = {"text" : "After your encounter with the dog you continue on and enter your house", "choices" : ["Continue"], "outcomes" : [momConvoTime]};
+                var dogFood = {"text" : "You decide to give the dog an apple",
+                "gameEvent": function() {
+                    playerObj.groceries[APPLE_INDEX].quantity--;
+                },  "choices" : ["Okay"], "outcomes" : [easyPath11]};
+                var dogPet = {"text" : "You decide to pet the dog which was a bad choice and it bites you",
+                "gameEvent": function() {
+                    playerObj.health -= 10;
+                    updatePlayerStatus("setH", playerObj.health);
+                },  "choices" : ["Okay"], "outcomes" : [easyPath11]};
+                var dog = {"text" : "You continue on towards the dog, what do you do as you near it?", "choices" : ["Pet the dog", "Give the dog food", "Ignore the dog"], "outcomes" : [dogPet, dogFood, easyPath11]};
+                var easyPath10 = {"text" : "As you near your house you spot a stray dog on the path.", "choices" : ["Continue"], "outcomes" : [dog]};
+                var easyPath9 = {"text" : "You continue on down the path.", "choices" : ["Continue"], "outcomes" : [easyPath10]};
+                var easyPath8 = {"text" : "After your encounter with the homeless man, you continue on down the path.", "choices" : ["Continue"], "outcomes" : [easyPath9]};
+                var homelessIgn = {"text" : "You decide the best choice is to just ignore the man and continue on your way. Little did you know he continued to follow you causing you to get frightened and drop your bag of potatoes",
+                "gameEvent": function() {
+                    playerObj.groceries[POTATO_INDEX].quantity--;
+                }, "choices" : ["Okay"], "outcomes" : [easyPath8]};
+                var homelessMon = {"text" : "You give him 50 gold and continue on",
+                "gameEvent": function() {
+                    playerObj.gold -= 50;
+                    updatePlayerStatus("setG", playerObj.gold);
+                }, "choices" : ["Okay"], "outcomes" : [easyPath8]};
+                var homelessGro = {"text" : "You give him 1 apple and 2 bananas then continue on",
+                "gameEvent": function() {
+                    playerObj.groceries[APPLE_INDEX].quantity--;
+                    playerObj.groceries[BANANA_INDEX].quantity -= 2;
+                }, "choices" : ["Okay"], "outcomes" : [easyPath8]};
+                var homelessMan = {"text" : "Slowly approaching the homeless man he says \"Please sir help me I haven't got any food and no money neither.\" What do you do?",
+                 "choices" : ["Give him some of your groceries.", "Give him some of your gold.", "Ignore him and keep on walking."], "outcomes" : [homelessGro, homelessMon, homelessIgn]};
+                var easyPath7 = {"text" : "As you round a corner you see a homeless man.", "choices" : ["Continue"], "outcomes" : [homelessMan]};
+                var easyPath6 = {"text" : "You continue on down the path.", "choices" : ["Continue"], "outcomes" : [easyPath7]};
+                var easyPath5 = {"text" : "After spending some time at the tree, you decide to continue on down the path.", "choices" : ["Continue"], "outcomes" : [easyPath6]};
+                var treeRest = {"text" : "You decide to rest at the tree for a while.",
+                "gameEvent": function() {
+                    playerObj.health += 20;
+                    // add 2 hours to timer
+                    count += 60 * 120;
+                    updatePlayerStatus("setH", playerObj.health);
+                }, "choices" : ["Continue"], "outcomes" : [easyPath5]};
+                var treeClimb = {"text" : "You decide to climb up the tree climbing higher and higher until eventually... you fall!", 
+                "gameEvent": function() {
+                    playerObj.health -= 20;
+                    updatePlayerStatus("setH", playerObj.health);
+                }, "choices" : ["Continue"], "outcomes" : [easyPath5]};
+                var easyPathTree = {"text" : "As you get closer to the tree you notice it could be a nice place to rest. What do you do?", "choices" : ["Rest", "Climb", "Continue on"], "outcomes" : [treeRest, treeClimb, easyPath5]};
+                var easyPath4 = {"text" : "As you're walking down the path you spot a cool shady tree.", "choices" : ["Let's check it out"], "outcomes" : [easyPathTree]};
+                var easyPath3 = {"text" : "You continue on down the path.", "choices" : ["Continue"], "outcomes" : [easyPath4]};
+                var easyPath2 = {"text" : "You continue on down the path.", "choices" : ["Continue"], "outcomes" : [easyPath3]};
+                var easyPath1 = {"text" : "You begin walking on the longest but safest path.", "choices" : ["Continue"], "outcomes" : [easyPath2]};
+
+                var startHome = {"text" : "To begin your journey home you can choose from one of four paths", 
+                "gameEvent": function() {
+                    if (playerObj.gold >= 500) {
+                        startHome.choices.push("You can pay 500 gold to take a cart ride home"),
+                        startHome.outcomes.push(cartPath1);
+                    }
+                }, "choices": ["You can take a shorter path that is pretty dangerous", "You can take a medium length path that is slightly dangerous", "You can take a long path that is not very dangerous"], "outcomes": [hardPath1, mediumPath1, easyPath1]};
                 var keepShopping = {"text" : "You arrive at a tent with several goods. What do you do?", "choices": ["Buy health potions for 50 gold each (heals 20 damage)", "Buy fake gold for 300 gold (maybe this could be useful later)", "Buy secret key for 999999 gold (???)", "Do nothing or finish shopping"], "outcomes": [addPotionToInventory, addFakeGoldToInventory, addSecretKeyToInventory, startHome] };
                 var gameEvent1 = {"text" : "You start at the town with a loaf of bread, 5 apples, 3 bananas, and a bag of potatoes. Before you start your journey do you?", "choices": ["Keep shopping", "Start heading home"], "outcomes": [keepShopping, startHome]};
                 GAME_EVENTS.push(gameEvent1);
-                // return gameEvents;
             }
 
             function updateChoices(event){
@@ -190,48 +660,48 @@
                 }
             }
             
+            function showGameOver(){
+                updateChoices(youLost);
+                loserPic.style.display = "block";
+                clearInterval(timerId);
+            }
+
+            statusId = setInterval(checkIfPlayerStatusNeedsUpdate,250);
+
+            function checkIfPlayerStatusNeedsUpdate() {
+                if (playerObj.health < 100) {
+                    updatePlayerStatus("alright");
+                } else {
+                    updatePlayerStatus("happy");
+                }
+                if (playerObj.health < 50) {
+                    updatePlayerStatus("sad");
+                }
+                if (playerObj.health <= 0) {
+                    playerObj.health = 0;
+                    updatePlayerStatus("setH", playerObj.health)
+                    updatePlayerStatus("dead");
+                    setTimeout(function () {
+                        showGameOver();
+                    }, 5500);
+                }
+            }
+            
             function main() {
                 createGameEvents();
                 var startEvent = GAME_EVENTS[0];
                 updateChoices(startEvent);
                 currentEvent = startEvent;
-                // Game will run while player has health and has not reached home
-                // while(playerObj.health > 0 && !currentEvent.text.includes("You made it home")){
-                //     // var startEvent = GAME_EVENTS[0];
-                //     var storyText = document.getElementById("storyContainer");
-                    
-                //     console.log("Looping");
-                //     playerObj.health -= 10;
-                // }
                 
             }
-
 
             setupPlayer();
             main();
 
-            
-
 			/*
-First come up with an original premise and characters. If there is some overlap concerning themes and names from other stories across the various media platforms that is fine, but please not blatant plagiarism of another's work.
-As a base you can use the choose your adventure code in the unit 4 intro as a base for creating your game. However know that there will have to be heavy modifications to it to fulfill the other requirements.
-The game must include instructions and a basic synopsis of the story. Be sure to explain each system that is present in the game so the play is aware or what they will have to do. This can be included in the HTML of the web page itself or inside the game engine.
-The game must make use of document.getElementById to manipulate the HTMLElement.
-The game will need to make use of at least one Object that stores vital information for the game. This could be character data such as name, level, experience, stats ect..., or store different states of the game or flags. Feel free to use as many objects as need though.
-The game must have a main game declared function, and three other declared functions. At least two methods of an object must also be utilized. This can be the main game object or other created objects. Use functions and methods to minimize on repeating of code. More points for cleaner, less repeated code.
-The game must make use of an Array to keep track of something. This could be an inventory system, a history system, an achievement system, ect.. The contents of this array should be able to be displayed back to the player either at the press of a button, constantly updated on screen, or as a results screen. Feel free to use as many arrays as needed.
-A for loop and/or while loop needs to be used. These can be used to iterate though an Array to display information back. They could also be use as part of the game loop or some sort of AI logic, or as part of a system.
-The game will need to make use of a timer of some sorts that uses setInterval. This could be a game timer, or a timed scenario, or a battle timer, or any mixture of these. It can count up or countdown. This timer must be displayed to the user in an appropriate way. (no need to show hours if it coutdowns in second)
-The game must include at least one sort of non-time based counter that is displayed to the player. That could be money, health, score, magic, stress level, or any numerical system related to the game. There can be multiples of these but they must be represented to the player in some way(in number, in bars, in symbols, ect...). These values should be stored in their own variables or property of a larger game object.
-The game must implement some drawing in a <canvas> tag. Some suggestions are a map of the world showing the players current position, drawing enemies or battle effects when a choice is made. Can even use multiples to draw the interface out creating custom buttons. The canvas must however either react to the game(updating a players position) or to the player actions(a hover effect if used for a button)
-The game will need to have at least 40 different "scenes" with at least 15 of those having choices/actions to be made. The scenes must convey using text what is happening. Images can also be used, or feel free to draw out a scene using the <canvas> tag. If you are using some sort of battle system in the game, then a single battle is one set of choices/actions in a single scene, not each time you choose an action in the battle. These choices/actions must branch off into different results and have some effect on the game. (both choices always lead to the exact same following result) There can be more than two choices per scene and after the results have had their effect, the game can come back to single path or the can infinitely branch out with many possible endings.
-Each action a player can make is both represented visually on the screen (button, something clickable) or with the use of the keyboard. The corresponding key to press can be displayed as a hover effect over the button, or described outside the game in the HTML, or inside the game in an instructions screen, or on the button itself.
-The game must make use of random numbers in a meaningful way. This can be randomly selected choice, a random event or chance at an event happening, random damage in a battle, or random item pickups.
+
 Implement some kind of "cheat code" in the game. It can skip to the end of the game, give alot of resources (money/health), reset a timer ect... The code must be entered on the keyboard using a specific combination of key presses that are not accidentaly going to get pressed (6+ keys in the sequence). The keys must be pressed within 1 second of each other and must be consecutive. If too much time elapses or an incorrect key is pressed in the middle of the sequence, the whole sequence should reset.
-The game will need some sort of start and ending screen.
-The code should be heavily commented describing what the code is doing or supposed to do.
-Be sure to test and debug the game before submitting. Obvious bugs, non-functioning code and fatal errors will be reflected in the grade.
-Be school appropriate with the language and context. This is a video game project and there is violence in video games. However there is no need to go overboard with gratuity of the content.
+
 */
 		</script>
 	</body>
